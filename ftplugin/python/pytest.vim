@@ -16,6 +16,7 @@ let g:pytest_session_errors    = {}
 let g:pytest_session_error     = 0
 let g:pytest_last_session      = ""
 let g:pytest_looponfail        = 0
+let g:pytest_findcoverage      = 1
 
 
 function! s:PytestSyntax() abort
@@ -248,6 +249,20 @@ function! s:Echo(msg, ...)
 
     let &ruler=x | let &showcmd=y
 endfun
+
+
+function! s:FindCoverage() abort
+    let found = findfile(".coverage", ".;")
+    if (found !~ '.coverage')
+        let found = findfile(".coveragerc", ".;")
+        if (found !~ '.coveragerc')
+            let found = ".coverage"
+        else
+            let found = fnamemodify(found, ":h") . "/.coverage"
+        endif
+    endif
+    return found
+endfunction
 
 
 " Always goes back to the first instance
@@ -545,6 +560,7 @@ function! s:ResetAll()
     let g:pytest_session_error     = 0
     let g:pytest_last_session      = ""
     let g:pytest_looponfail        = 0
+    let g:pytest_findcoverage      = 1
 endfunction!
 
 
@@ -563,7 +579,13 @@ function! s:RunPyTest(path, ...)
         let cmd = "py.test --tb=short " . a:path
     endif
 
-    let out = system(cmd)
+    if g:pytest_findcoverage && empty($COVERAGE_FILE)
+        let $COVERAGE_FILE = s:FindCoverage()
+        let out = system(cmd)
+        let $COVERAGE_FILE = ""
+    else
+        let out = system(cmd)
+    endif
 
     " if py.test insists in giving us color, sanitize the output
     " note that ^[ is really:
