@@ -573,10 +573,17 @@ function! s:RunPyTest(path, ...)
 
     let g:pytest_last_session = ""
 
-    if (len(parametrized) && parametrized != "0")
-        let cmd = "py.test -k " . parametrized . " --tb=short " . a:path
+    let coveragerc = findfile(".coveragerc", ".;")
+    if (coveragerc !~ '.coveragerc')
+        let covconf = ""
     else
-        let cmd = "py.test --tb=short " . a:path
+        let covconf = "--cov-config " . coveragerc . " "
+    endif
+
+    if (len(parametrized) && parametrized != "0")
+        let cmd = "py.test -k " . parametrized . " --tb=short " . covconf . a:path
+    else
+        let cmd = "py.test --tb=short " . covconf . a:path
     endif
 
     if g:pytest_findcoverage && empty($COVERAGE_FILE)
